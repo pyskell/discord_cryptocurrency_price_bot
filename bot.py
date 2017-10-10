@@ -13,9 +13,8 @@ bot = commands.Bot(command_prefix="!", description="Pulls cryptocurrencies by na
 currency_file = open("currency_list.json", "r")
 currency_list = json.load(currency_file)
 
-#@bot.event()
-#async def on_ready():
-#	print("Ready to go boss!")
+bad_word_file = open("bad_word_list.json", "r")
+bad_word_list = json.load(bad_word_file)
 
 @bot.command()
 async def price(*, arguments: str):
@@ -46,6 +45,9 @@ async def price(*, arguments: str):
 			bot_reply = "Sorry I couldn't make sense of that query"
 	elif rate_limited:
 		bot_reply = "You're checking too fast. Can only check for a price once every {} seconds".format(RATE_LIMIT_IN_SECONDS)
+
+	if symbol.lower() in bad_word_list:
+		bot_reply = "Fine. No crypto prices for you. Jerk."
 
 	print(bot_reply)
 	await bot.say(bot_reply)
