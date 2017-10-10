@@ -20,6 +20,8 @@ currency_list = json.load(currency_file)
 @bot.command()
 async def price(symbol: str):
 	global last_query_time # Global variable, yeah, yeah, I know
+
+	symbol = symbol.upper()
 	bot_reply = "Sorry, that symbol ({}) was not found".format(symbol)
 	rate_limited = datetime.now() < (last_query_time + timedelta(seconds=RATE_LIMIT_IN_SECONDS))
 	if (not rate_limited) and (symbol in currency_list):
