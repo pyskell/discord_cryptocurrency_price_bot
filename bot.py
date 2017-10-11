@@ -8,7 +8,7 @@ from app.private_settings import TOKEN
 
 RATE_LIMIT_IN_SECONDS = 10
 
-last_query_time = datetime.now()
+last_query_time = datetime.now() - timedelta(seconds=RATE_LIMIT_IN_SECONDS)
 bot = commands.Bot(command_prefix="!", description="Pulls cryptocurrencies by name from CoinmarketCap")
 currency_file = open("currency_list.json", "r")
 currency_list = json.load(currency_file)
@@ -37,10 +37,12 @@ async def price(*, arguments: str):
 		result = response.json()
 
 		price_field = "price_{}".format(currency)
+		price = float(result[0][price_field])
+#		price = round(price, 8)
 
 		if price_field in result[0]:
 			last_query_time = datetime.now()
-			bot_reply = "The current price of {} is {} {}".format(symbol, currency.upper(), result[0][price_field])
+			bot_reply = "The current price of {} is {} {:.8f}".format(symbol, currency.upper(), price)
 		else:
 			bot_reply = "Sorry I couldn't make sense of that query"
 	elif rate_limited:
