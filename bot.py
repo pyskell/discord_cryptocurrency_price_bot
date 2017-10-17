@@ -16,8 +16,8 @@ currency_list = json.load(currency_file)
 bad_word_file = open("bad_word_list.json", "r")
 bad_word_list = json.load(bad_word_file)
 
-@bot.command()
-async def price(*, arguments: str):
+@bot.command(pass_context=True)
+async def price(ctx, *, arguments: str):
 	global last_query_time # Global variable, yeah, yeah, I know
 
 	arguments = arguments.split()
@@ -29,6 +29,15 @@ async def price(*, arguments: str):
 
 	symbol = symbol.upper()
 	bot_reply = "Sorry, that symbol ({}) was not found".format(symbol)
+
+
+	is_member = False
+	members = ctx.message.server.members
+	for member in members:
+		if member.name.upper() == symbol:
+			is_member = True
+			break
+
 	rate_limited = datetime.now() < (last_query_time + timedelta(seconds=RATE_LIMIT_IN_SECONDS))
 	if (not rate_limited) and (symbol in currency_list):
 #		last_query_time = datetime.now()
@@ -47,6 +56,8 @@ async def price(*, arguments: str):
 			bot_reply = "Sorry I couldn't make sense of that query"
 	elif rate_limited:
 		bot_reply = "You're checking too fast. Can only check for a price once every {} seconds".format(RATE_LIMIT_IN_SECONDS)
+	elif is_member:
+		bot_reply = "I'll give you 'bout tree fiddy"
 
 	if symbol.lower() in bad_word_list:
 		bot_reply = "Fine. No crypto prices for you. Jerk."
