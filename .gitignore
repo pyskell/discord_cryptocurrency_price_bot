@@ -3,3 +3,5 @@ private_settings.py
 __pycache__
 /env
 /.vs/discord_cryptocurrency_price_bot/v14
+/UpgradeLog.htm
+/Backup

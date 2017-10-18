@@ -4,8 +4,6 @@ import sys
 from discord.ext import commands
 from datetime import datetime, timedelta
 
-from app.private_settings import TOKEN
-
 RATE_LIMIT_IN_SECONDS = 10
 
 last_query_time = datetime.now() - timedelta(seconds=RATE_LIMIT_IN_SECONDS)
@@ -16,8 +14,15 @@ currency_list = json.load(currency_file)
 bad_word_file = open("bad_word_list.json", "r")
 bad_word_list = json.load(bad_word_file)
 
-@bot.command(pass_context=True)
-async def price(ctx, *, arguments: str):
+
+def get_json_query(get_url, params):
+	response = requests.get(get_url, params=params)
+	result = response.json()
+
+	return result
+
+
+def get_price(ctx, arguments: str):
 	global last_query_time # Global variable, yeah, yeah, I know
 
 	arguments = arguments.split()
@@ -32,22 +37,20 @@ async def price(ctx, *, arguments: str):
 
 
 	is_member = False
-	members = ctx.message.server.members
-	for member in members:
-		if member.name.upper() == symbol:
-			is_member = True
-			break
+	if ctx is not None:
+		members = ctx.message.server.members
+		for member in members:
+			if member.name.upper() == symbol:
+				is_member = True
+				break
 
 	rate_limited = datetime.now() < (last_query_time + timedelta(seconds=RATE_LIMIT_IN_SECONDS))
 	if (not rate_limited) and (symbol in currency_list):
-#		last_query_time = datetime.now()
-		url = "https://api.coinmarketcap.com/v1/ticker/{}/?convert={}".format(currency_list[symbol], currency)
-		response = requests.get(url)
-		result = response.json()
+		get_url = "https://api.coinmarketcap.com/v1/ticker/{}/".format(currency_list[symbol])
+		result = get_json_query(get_url, {"convert" : currency})
 
 		price_field = "price_{}".format(currency)
 		price = float(result[0][price_field])
-#		price = round(price, 8)
 
 		if price_field in result[0]:
 			last_query_time = datetime.now()
@@ -62,8 +65,16 @@ async def price(ctx, *, arguments: str):
 	if symbol.lower() in bad_word_list:
 		bot_reply = "Fine. No crypto prices for you. Jerk."
 
+	return bot_reply
+
+
+@bot.command(pass_context=True)
+async def price(ctx, *, arguments: str):
+	bot_reply = get_price(ctx, arguments)
 	print(bot_reply)
 	await bot.say(bot_reply)
 
+
 if __name__ == "__main__":
+	from app.private_settings import TOKEN
 	bot.run(TOKEN)
