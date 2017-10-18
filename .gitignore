@@ -2,3 +2,4 @@ private_settings.py
 *.pyc
 __pycache__
 /env
+/.vs/discord_cryptocurrency_price_bot/v14
