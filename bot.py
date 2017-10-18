@@ -52,9 +52,14 @@ def get_price(ctx, arguments: str):
 		price_field = "price_{}".format(currency)
 		price = float(result[0][price_field])
 
+		if price > 1.0:
+			price = round(price, 2)
+		else:
+			price = round(price, 8)
+
 		if price_field in result[0]:
 			last_query_time = datetime.now()
-			bot_reply = "The current price of {} is {} {:.8f}".format(symbol, currency.upper(), price)
+			bot_reply = "The current price of {} is {} {}".format(symbol, currency.upper(), price)
 		else:
 			bot_reply = "Sorry I couldn't make sense of that query"
 	elif rate_limited:
@@ -74,6 +79,9 @@ async def price(ctx, *, arguments: str):
 	print(bot_reply)
 	await bot.say(bot_reply)
 
+
+def get_volume():
+	return None
 
 if __name__ == "__main__":
 	from app.private_settings import TOKEN
