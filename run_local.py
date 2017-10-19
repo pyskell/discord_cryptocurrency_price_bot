@@ -3,6 +3,13 @@ import json
 import sys
 
 if __name__ == "__main__":
-	if sys.argv[1] == "!price":
-		bot_reply = bot.get_price(None, " ".join(sys.argv[2:]))
-		print(bot_reply)
+	command = sys.argv[1]
+	arguments = " ".join(sys.argv[2:])
+
+	bot_reply = "Invalid command"
+	if command == "!price":
+		bot_reply = bot.get_price_response(None, arguments)
+	if command == "!volume":
+		bot_reply = bot.get_volume_response(None, arguments)
+	
+	print(bot_reply)
