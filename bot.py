@@ -16,16 +16,26 @@ bad_word_file = open("bad_word_list.json", "r")
 bad_word_list = json.load(bad_word_file)
 
 
-#class BotResponseType(Enum):
-#	INFO = 1
-#	RUDE = 2
-#	JOKE = 3
-
-
 class Failure(Enum):
 	RATELIMIT = 1
-	NOTFOUND = 2
-	RUDEQUERY = 3
+	INVALIDQUERY = 2
+	NOTFOUND = 3
+	RUDEQUERY = 4
+
+
+def failure_to_bot_reply(failure, command_name):
+	bot_reply = "I literally have no response to that. Contact my creator. Something has gone wrong."
+
+	if failure == Failure.RATELIMIT:
+		bot_reply = "You're checking too fast. Can only check for a price once every {} seconds".format(RATE_LIMIT_IN_SECONDS)	
+	if failure == Failure.INVALIDQUERY:
+		bot_reply = "Sorry I couldn't make sense of that query"
+	if failure == Failure.NOTFOUND:
+		bot_reply = "Sorry, that symbol was not found"		
+	if failure == Failure.RUDEQUERY:
+		bot_reply = "Fine. No crypto {}s for you. Jerk.".format(command_name)
+
+	return bot_reply
 
 
 def get_json_query(get_url, params):
@@ -73,8 +83,6 @@ def get_price_response(ctx, arguments: str):
 	symbol = ticker_query[0]
 	currency = ticker_query[1]
 
-	bot_reply = "Sorry, that symbol ({}) was not found".format(symbol)
-
 	is_member = False
 	if ctx is not None:
 		members = ctx.message.server.members
@@ -83,6 +91,10 @@ def get_price_response(ctx, arguments: str):
 				is_member = True
 				break
 
+	if is_member:
+		return "I'll give you 'bout tree fiddy"
+
+	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "price")
 	result = get_ticker(symbol, currency)
 	if type(result) is not Failure:
 		field = "price_{}".format(currency)
@@ -98,13 +110,9 @@ def get_price_response(ctx, arguments: str):
 			last_query_time = datetime.now()
 			bot_reply = "The current price of {} is {} {:,}".format(symbol, currency.upper(), price)
 		else:
-			bot_reply = "Sorry I couldn't make sense of that query"
-	elif result == Failure.RATELIMIT:
-		bot_reply = "You're checking too fast. Can only check for a price once every {} seconds".format(RATE_LIMIT_IN_SECONDS)
-	elif is_member:
-		bot_reply = "I'll give you 'bout tree fiddy"
-	elif result == Failure.RUDEQUERY:
-		bot_reply = "Fine. No crypto prices for you. Jerk."
+			bot_reply = failure_to_bot_reply(Failure.INVALIDQUERY, "price")
+	else:
+		bot_reply = failure_to_bot_reply(result, "price")
 
 	return bot_reply
 
@@ -122,7 +130,7 @@ def get_volume_response(ctx, arguments: str):
 	symbol = ticker_query[0]
 	currency = ticker_query[1]
 
-	bot_reply = "Sorry, that symbol ({}) was not found".format(symbol)
+	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "volume")
 
 	result = get_ticker(symbol, currency)
 	if type(result) is not Failure:
@@ -133,11 +141,9 @@ def get_volume_response(ctx, arguments: str):
 			last_query_time = datetime.now()
 			bot_reply = "The current volume of {} is {} {:,}".format(symbol, currency.upper(), volume)
 		else:
-			bot_reply = "Sorry I couldn't make sense of that query"
-	elif result == Failure.RATELIMIT:
-		bot_reply = "You're checking too fast. Can only check for a price once every {} seconds".format(RATE_LIMIT_IN_SECONDS)
-	elif result == Failure.RUDEQUERY:
-		bot_reply = "Fine. No crypto volumes for you. Jerk."
+			bot_reply = failure_to_bot_reply(Failure.INVALIDQUERY, "volume")
+	else:
+		bot_reply = failure_to_bot_reply(result, "volume")
 
 	return bot_reply
 
