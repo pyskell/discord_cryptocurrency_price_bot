@@ -24,7 +24,7 @@ class Failure(Enum):
 	RUDEQUERY = 4
 
 
-def failure_to_bot_reply(failure, command_name):
+def failure_to_bot_reply(failure):
 	bot_reply = "I literally have no response to that. Contact my creator. Something has gone wrong."
 
 	if failure == Failure.RATELIMIT:
@@ -34,16 +34,9 @@ def failure_to_bot_reply(failure, command_name):
 	if failure == Failure.NOTFOUND:
 		bot_reply = "Sorry, that symbol was not found"		
 	if failure == Failure.RUDEQUERY:
-		bot_reply = "Fine. No crypto {}s for you. Jerk.".format(command_name)
+		bot_reply = "Fine. No ticker for you. Jerk."
 
 	return bot_reply
-
-
-def get_json_query(get_url, params):
-	response = requests.get(get_url, params=params)
-	result = response.json()
-
-	return result
 
 
 def get_ticker_endpoint(symbol, currency):
@@ -53,7 +46,7 @@ def get_ticker_endpoint(symbol, currency):
 	if rate_limited:
 		return Failure.RATELIMIT
 
-	if symbol.lower() in bad_word_list:
+	if symbol.lower() in bad_word_list or currency.lower() in bad_word_list:
 		return Failure.RUDEQUERY
 
 	symbol = symbol.upper()
@@ -61,7 +54,8 @@ def get_ticker_endpoint(symbol, currency):
 		return Failure.NOTFOUND
 
 	get_url = "https://api.coinmarketcap.com/v1/ticker/{}/".format(currency_list[symbol])
-	ticker = get_json_query(get_url, {"convert" : currency})	
+	response = requests.get(get_url, params={"convert" : currency})
+	ticker = response.json()
 
 	return ticker
 
@@ -84,10 +78,10 @@ def parse_arguments(arguments):
 
 
 def get_price_reply(ctx, arguments):
-	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "price")
+	bot_reply = failure_to_bot_reply(Failure.NOTFOUND)
 
 	symbol, currency = parse_arguments(arguments)
-	if symbol is None or currency is None:
+	if (symbol is None) or (currency is None):
 		return bot_reply
 
 	is_member = False
@@ -101,54 +95,23 @@ def get_price_reply(ctx, arguments):
 	if is_member:
 		return "I'll give you 'bout tree fiddy"
 
-	result = get_ticker_endpoint(symbol, currency)
-	if type(result) is not Failure:
-		field = "price_{}".format(currency)
-
-		if field in result[0]:
-			price = float(result[0][field])
-
-			if price > 1.0:
-				price = round(price, 2)
-			else:
-				price = round(price, 8)
-
-			last_query_time = datetime.now()
-			bot_reply = "The current price of {} is {} {:,}".format(symbol, currency.upper(), price)
-		else:
-			bot_reply = failure_to_bot_reply(Failure.INVALIDQUERY, "price")
-	else:
-		bot_reply = failure_to_bot_reply(result, "price")
+	fields = OrderedDict([("Volume" , "price_{}".format(currency))])
+	bot_reply = get_ticker_reply(arguments, fields)
 
 	return bot_reply
 
 
 @bot.command(pass_context=True)
 async def price(ctx, *, arguments: str):
-	bot_reply = get_price_reply(ctx, arguments)
+	bot_reply = get_price_reply(ctx, arguments, fields)
 	print(bot_reply)
 	await bot.say(bot_reply)
 
 
 def get_volume_reply(arguments):
-	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "volume")
-
-	symbol, currency = parse_arguments(arguments)
-	if symbol is None or currency is None:
-		return bot_reply
-
-	result = get_ticker_endpoint(symbol, currency)
-	if type(result) is not Failure:
-		field = "24h_volume_{}".format(currency)
-
-		if field in result[0]:
-			volume = float(result[0][field])
-			last_query_time = datetime.now()
-			bot_reply = "The current volume of {} is {} {:,}".format(symbol, currency.upper(), volume)
-		else:
-			bot_reply = failure_to_bot_reply(Failure.INVALIDQUERY, "volume")
-	else:
-		bot_reply = failure_to_bot_reply(result, "volume")
+	_, currency = parse_arguments(arguments)
+	fields = OrderedDict([("Volume" , "24h_volume_{}".format(currency))])
+	bot_reply = get_ticker_reply(arguments, fields)
 
 	return bot_reply
 
@@ -160,21 +123,21 @@ async def volume(*, arguments: str):
 	await bot.say(bot_reply)
 
 
-def get_ticker_reply(arguments):
-	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "info")
+def get_ticker_reply(arguments, fields=None):
+	bot_reply = failure_to_bot_reply(Failure.NOTFOUND)
 	
 	symbol, currency = parse_arguments(arguments)
-	if symbol is None or currency is None:
+	if (symbol is None) or (currency is None):
 		return bot_reply
 
 	result = get_ticker_endpoint(symbol, currency)
-
-	fields = OrderedDict([("Price" , "price_{}".format(currency)),
-				("Volume" , "24h_volume_{}".format(currency)),
-				("% Change (1h)" , "percent_change_1h"),
-				("% Change (24h)" , "percent_change_24h"),
-				("% Change (7d)" , "percent_change_7d")
-			])
+	if fields is None:
+		fields = OrderedDict([("Price" , "price_{}".format(currency)),
+					("Volume" , "24h_volume_{}".format(currency)),
+					("% Change (1h)" , "percent_change_1h"),
+					("% Change (24h)" , "percent_change_24h"),
+					("% Change (7d)" , "percent_change_7d")
+				])
 
 	if type(result) is not Failure:
 		reply = []
@@ -189,7 +152,7 @@ def get_ticker_reply(arguments):
 		bot_reply = "{} (in {}) - ".format(symbol, currency.upper()) + " | ".join(reply)
 		last_query_time = datetime.now()
 	else:
-		bot_reply = failure_to_bot_reply(result, "info")
+		bot_reply = failure_to_bot_reply(result)
 
 	return bot_reply
 
