@@ -84,6 +84,12 @@ def parse_arguments(arguments):
 
 
 def get_price_reply(ctx, arguments):
+	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "price")
+
+	symbol, currency = parse_arguments(arguments)
+	if symbol is None or currency is None:
+		return bot_reply
+
 	is_member = False
 	if ctx is not None:
 		members = ctx.message.server.members
@@ -95,12 +101,6 @@ def get_price_reply(ctx, arguments):
 	if is_member:
 		return "I'll give you 'bout tree fiddy"
 
-	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "price")
-	
-	symbol, currency = parse_arguments(arguments)
-	if symbol is None or currency is None:
-		return bot_reply
-	
 	result = get_ticker_endpoint(symbol, currency)
 	if type(result) is not Failure:
 		field = "price_{}".format(currency)
