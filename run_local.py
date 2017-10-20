@@ -8,8 +8,10 @@ if __name__ == "__main__":
 
 	bot_reply = "Invalid command"
 	if command == "!price":
-		bot_reply = bot.get_price_response(None, arguments)
+		bot_reply = bot.get_price_reply(None, arguments)
 	if command == "!volume":
-		bot_reply = bot.get_volume_response(None, arguments)
-	
+		bot_reply = bot.get_volume_reply(arguments)
+	if command == "!ticker":
+		bot_reply = bot.get_ticker_reply(arguments)
+
 	print(bot_reply)

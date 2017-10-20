@@ -1,6 +1,7 @@
 import requests
 import json
 import sys
+from collections import OrderedDict
 from enum import Enum
 from discord.ext import commands
 from datetime import datetime, timedelta
@@ -45,7 +46,7 @@ def get_json_query(get_url, params):
 	return result
 
 
-def get_ticker(symbol, currency):
+def get_ticker_endpoint(symbol, currency):
 	global last_query_time # Global variable, yeah, yeah, I know
 	rate_limited = datetime.now() < (last_query_time + timedelta(seconds=RATE_LIMIT_IN_SECONDS))
 
@@ -65,7 +66,11 @@ def get_ticker(symbol, currency):
 	return ticker
 
 
-def parse_ticker_query(arguments):
+def parse_arguments(arguments):
+
+	if len(arguments) == 0:
+		return None, None
+
 	arguments = arguments.split()
 	symbol = arguments[0]
 	currency = "usd"
@@ -78,11 +83,7 @@ def parse_ticker_query(arguments):
 	return symbol, currency
 
 
-def get_price_response(ctx, arguments: str):
-	ticker_query = parse_ticker_query(arguments)
-	symbol = ticker_query[0]
-	currency = ticker_query[1]
-
+def get_price_reply(ctx, arguments):
 	is_member = False
 	if ctx is not None:
 		members = ctx.message.server.members
@@ -95,7 +96,12 @@ def get_price_response(ctx, arguments: str):
 		return "I'll give you 'bout tree fiddy"
 
 	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "price")
-	result = get_ticker(symbol, currency)
+	
+	symbol, currency = parse_arguments(arguments)
+	if symbol is None or currency is None:
+		return bot_reply
+	
+	result = get_ticker_endpoint(symbol, currency)
 	if type(result) is not Failure:
 		field = "price_{}".format(currency)
 
@@ -119,20 +125,19 @@ def get_price_response(ctx, arguments: str):
 
 @bot.command(pass_context=True)
 async def price(ctx, *, arguments: str):
-	bot_reply = get_price_response(ctx, arguments)
+	bot_reply = get_price_reply(ctx, arguments)
 	print(bot_reply)
 	await bot.say(bot_reply)
 
 
-# TODO: Further deal with the largely duplicate code here.
-def get_volume_response(ctx, arguments: str):
-	ticker_query = parse_ticker_query(arguments)
-	symbol = ticker_query[0]
-	currency = ticker_query[1]
-
+def get_volume_reply(arguments):
 	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "volume")
 
-	result = get_ticker(symbol, currency)
+	symbol, currency = parse_arguments(arguments)
+	if symbol is None or currency is None:
+		return bot_reply
+
+	result = get_ticker_endpoint(symbol, currency)
 	if type(result) is not Failure:
 		field = "24h_volume_{}".format(currency)
 
@@ -148,9 +153,50 @@ def get_volume_response(ctx, arguments: str):
 	return bot_reply
 
 
-@bot.command(pass_context=True)
-async def volume(ctx, *, arguments: str):
-	bot_reply = get_volume_response(ctx, arguments)
+@bot.command()
+async def volume(*, arguments: str):
+	bot_reply = get_volume_reply(arguments)
+	print(bot_reply)
+	await bot.say(bot_reply)
+
+
+def get_ticker_reply(arguments):
+	bot_reply = failure_to_bot_reply(Failure.NOTFOUND, "info")
+	
+	symbol, currency = parse_arguments(arguments)
+	if symbol is None or currency is None:
+		return bot_reply
+
+	result = get_ticker_endpoint(symbol, currency)
+
+	fields = OrderedDict([("Price" , "price_{}".format(currency)),
+				("Volume" , "24h_volume_{}".format(currency)),
+				("% Change (1h)" , "percent_change_1h"),
+				("% Change (24h)" , "percent_change_24h"),
+				("% Change (7d)" , "percent_change_7d")
+			])
+
+	if type(result) is not Failure:
+		reply = []
+		for key in fields:
+			field = fields[key]
+			if field in result[0]:
+				value = float(result[0][field])
+				if "percent" in field:
+					reply.append("{}: {}%".format(key, value))
+				else:
+					reply.append("{}: {:,}".format(key, value))
+		bot_reply = "{} (in {}) - ".format(symbol, currency.upper()) + " | ".join(reply)
+		last_query_time = datetime.now()
+	else:
+		bot_reply = failure_to_bot_reply(result, "info")
+
+	return bot_reply
+
+
+@bot.command()
+async def ticker(*, arguments: str):
+	bot_reply = get_ticker_reply(arguments)
 	print(bot_reply)
 	await bot.say(bot_reply)
 
