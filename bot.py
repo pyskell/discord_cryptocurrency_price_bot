@@ -103,7 +103,7 @@ def get_price_reply(ctx, arguments):
 
 @bot.command(pass_context=True)
 async def price(ctx, *, arguments: str):
-	bot_reply = get_price_reply(ctx, arguments, fields)
+	bot_reply = get_price_reply(ctx, arguments)
 	print(bot_reply)
 	await bot.say(bot_reply)
 
