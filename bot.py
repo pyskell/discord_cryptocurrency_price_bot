@@ -182,8 +182,8 @@ def get_ticker_reply(arguments):
 			field = fields[key]
 			if field in result[0]:
 				value = float(result[0][field])
-				if "percent" in field:
-					reply.append("{}: {}%".format(key, value))
+				if "percent_change" in field:
+					reply.append("{}: {:+}%".format(key, value))
 				else:
 					reply.append("{}: {:,}".format(key, value))
 		bot_reply = "{} (in {}) - ".format(symbol, currency.upper()) + " | ".join(reply)
