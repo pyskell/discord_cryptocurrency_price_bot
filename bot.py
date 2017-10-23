@@ -95,7 +95,7 @@ def get_price_reply(ctx, arguments):
 	if is_member:
 		return "I'll give you 'bout tree fiddy"
 
-	fields = OrderedDict([("Volume" , "price_{}".format(currency))])
+	fields = OrderedDict([("Price" , "price_{}".format(currency))])
 	bot_reply = get_ticker_reply(arguments, fields)
 
 	return bot_reply
