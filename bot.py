@@ -7,6 +7,7 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 
 RATE_LIMIT_IN_SECONDS = 10
+LAMBO_PRICE_USD = 203295 # 2017 Lamborghini Huracan
 
 last_query_time = datetime.now() - timedelta(seconds=RATE_LIMIT_IN_SECONDS)
 bot = commands.Bot(command_prefix="!", description="Pulls cryptocurrencies by name from CoinmarketCap")
@@ -50,12 +51,23 @@ def get_ticker_endpoint(symbol, currency):
 		return Failure.RUDEQUERY
 
 	symbol = symbol.upper()
+
+	lambo_pricing = False
+	if currency.lower() == "lambo":
+		lambo_pricing = True
+		currency = "USD"
+
 	if symbol not in currency_list:
 		return Failure.NOTFOUND
 
 	get_url = "https://api.coinmarketcap.com/v1/ticker/{}/".format(currency_list[symbol])
 	response = requests.get(get_url, params={"convert" : currency})
 	ticker = response.json()
+
+	if lambo_pricing:
+		ticker[0]["price_lambo"] = float(ticker[0]["price_usd"]) / LAMBO_PRICE_USD
+
+#	import pdb; pdb.set_trace()
 
 	return ticker
 
