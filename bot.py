@@ -6,7 +6,7 @@ from enum import Enum
 from discord.ext import commands
 from datetime import datetime, timedelta
 
-RATE_LIMIT_IN_SECONDS = 10
+RATE_LIMIT_IN_SECONDS = 60
 LAMBO_PRICE_USD = 203295 # 2017 Lamborghini Huracan
 
 last_query_time = datetime.now() - timedelta(seconds=RATE_LIMIT_IN_SECONDS)
@@ -69,6 +69,7 @@ def get_ticker_endpoint(symbol, currency):
 
 #	import pdb; pdb.set_trace()
 
+	last_query_time = datetime.now()
 	return ticker
 
 
