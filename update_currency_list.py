@@ -8,7 +8,7 @@ ticker = response.json()
 currency_dict = {}
 
 for item in ticker:
-    currency_dict[item["symbol"]] = item["name"]
+    currency_dict[item["symbol"]] = item["id"]
 
 with open('currency_list.json', 'w') as file:
     json.dump(currency_dict, file)

@@ -67,8 +67,6 @@ def get_ticker_endpoint(symbol, currency):
 	if lambo_pricing:
 		ticker[0]["price_lambo"] = float(ticker[0]["price_usd"]) / LAMBO_PRICE_USD
 
-#	import pdb; pdb.set_trace()
-
 	last_query_time = datetime.now()
 	return ticker
 
