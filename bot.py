@@ -154,7 +154,7 @@ def get_ticker_reply(arguments, fields=None):
 		reply = []
 		for key in fields:
 			field = fields[key]
-			if field in result[0]:
+			if field in result[0] and result[0][field] is not None:
 				value = float(result[0][field])
 				if "percent_change" in field:
 					reply.append("{}: {:+}%".format(key, value))

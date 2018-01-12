@@ -28,6 +28,9 @@
     <Compile Include="run_local.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="update_currency_list.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
